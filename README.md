@@ -51,8 +51,8 @@ let docs = [
 Creating a search index only requires you to provide some function that uniquely identifies a document.
 
 ```ocaml
-# let search = Search.create (fun t -> t.uid);;
-val search : t Search.t = <abstr>
+# let search = Search.create (fun t -> t.uid) (module Search.Uids.String);;
+val search : (string, t) Search.t = <abstr>
 ```
 
 From here you add the indexes. These are the functions from your document to a string that will be used to search for documents matching some string later.

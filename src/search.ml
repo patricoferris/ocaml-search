@@ -1,18 +1,20 @@
 include Search_intf
 
-module Tfidf (D : sig
-  type t
-end) =
+module Tfidf
+    (Uid : Uid) (Doc : sig
+      type t
+    end) =
 struct
   module TokenMap = Map.Make (String)
-  module UidMap = Map.Make (String)
+  module UidMap = Map.Make (Uid)
 
-  type doc = D.t
+  type uid = Uid.t
+  type doc = Doc.t
 
   type t = {
     mutable token_map : stats TokenMap.t;
     mutable cache : float TokenMap.t;
-    uid : doc -> string;
+    uid : doc -> uid;
   }
 
   and stats = {
@@ -21,7 +23,7 @@ struct
     mutable uid_map : (doc * int) UidMap.t;
   }
 
-  let pp_uid ppf (s, (_, i)) = Format.fprintf ppf "%s: %i" s i
+  let pp_uid ppf (s, (_, i)) = Format.fprintf ppf "%s: %i" (Uid.to_string s) i
 
   let pp_stats ppf stats =
     let uids = UidMap.bindings stats.uid_map in
@@ -87,7 +89,7 @@ struct
         | None -> 0.
         | Some stats -> (
             let uid = t.uid doc in
-            match TokenMap.find_opt uid stats.uid_map with
+            match UidMap.find_opt uid stats.uid_map with
             | None -> 0.
             | Some (_, v) -> float_of_int v)
       in
@@ -123,11 +125,11 @@ struct
     List.sort (fun d1 d2 -> score_cmp @@ (tf d2 -. tf d1)) documents
 end
 
-type 'doc t = {
+type ('uid, 'doc) t = {
   mutable documents : 'doc list;
   mutable indexes : ('doc -> string) list;
-  uid : 'doc -> string;
-  index : 'doc mono_index;
+  uid : 'doc -> 'uid;
+  index : ('uid, 'doc) index;
   strategy : string -> string list;
   tokeniser : string -> string list;
   santiser : string -> string;
@@ -144,34 +146,53 @@ let prefix_stratgey s =
   in
   snd s |> List.rev
 
-let create_mono (type doc) ?(santiser = String.lowercase_ascii)
+let create_mono (type uid doc) ?(santiser = String.lowercase_ascii)
     ?(strategy = prefix_stratgey) ?(tokeniser = String.split_on_char ' ')
-    (index : doc mono_index) (uid : doc -> string) =
+    (index : (uid, doc) index) (uid : doc -> uid) =
   { documents = []; indexes = []; uid; index; strategy; santiser; tokeniser }
 
-let create (type doc) ?santiser ?strategy ?tokeniser (uid : doc -> string) =
+let create_uid (type uid) ~(to_string : uid -> string)
+    ~(cmp : uid -> uid -> int) =
   let module T = struct
-    include Tfidf (struct
-      type t = doc
-    end)
+    type t = uid
+
+    let to_string = to_string
+    let compare = cmp
+  end in
+  (module T : Uid with type t = uid)
+
+let create (type uid doc) ?santiser ?strategy ?tokeniser (uid : doc -> uid)
+    (module Uid : Uid with type t = uid) =
+  let module T = struct
+    include
+      Tfidf
+        (Uid)
+        (struct
+          type t = doc
+        end)
   end in
   create_mono ?santiser ?strategy ?tokeniser
-    (Indexer
-       ( (module T : Mono_indexer with type doc = doc and type t = T.t),
+    (Mono
+       ( (module T : Mono
+           with type doc = doc
+            and type t = T.t
+            and type uid = uid),
          T.empty uid ))
     uid
 
-let add_document (type doc) (t : doc t) doc =
+let add_document (type uid doc) (t : (uid, doc) t) doc =
   t.documents <- doc :: t.documents;
-  t.index |> fun (Indexer ((module I), index)) ->
-  let uid = t.uid doc in
-  let fields = List.fold_left (fun acc i -> i doc :: acc) [] t.indexes in
-  List.iter
-    (fun field ->
+  t.index |> function
+  | Mono ((module I), index) ->
+      let uid = t.uid doc in
+      let fields = List.fold_left (fun acc i -> i doc :: acc) [] t.indexes in
       List.iter
-        (fun token -> I.index index ~uid ~token doc)
-        (t.strategy (t.santiser field)))
-    fields
+        (fun field ->
+          List.iter
+            (fun token -> I.index index ~uid ~token doc)
+            (t.strategy (t.santiser field)))
+        fields
+  | _ -> assert false
 
 let add_index t index =
   t.indexes <- index :: t.indexes;
@@ -179,7 +200,24 @@ let add_index t index =
   t.documents <- [];
   List.iter (add_document t) docs
 
-let search (type doc) (t : doc t) s =
+let search (type uid doc) (t : (uid, doc) t) s =
   let tokens = t.tokeniser (t.santiser s) in
-  t.index |> fun (Indexer ((module I), indexer)) ->
-  I.search indexer tokens t.documents
+  t.index |> function
+  | Mono ((module I), indexer) -> I.search indexer tokens t.documents
+  | _ -> assert false
+
+module Uids = struct
+  module String = struct
+    type t = string
+
+    let to_string = Fun.id
+    let compare = String.compare
+  end
+
+  module Int = struct
+    type t = int
+
+    let to_string = string_of_int
+    let compare = Int.compare
+  end
+end
