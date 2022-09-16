@@ -1,0 +1,4 @@
+(library
+ (name search)
+ (public_name search)
+ (libraries))
