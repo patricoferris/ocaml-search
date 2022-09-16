@@ -144,26 +144,22 @@ let prefix_stratgey s =
   in
   snd s |> List.rev
 
-let create (type doc) ?(santiser = String.lowercase_ascii)
+let create_mono (type doc) ?(santiser = String.lowercase_ascii)
     ?(strategy = prefix_stratgey) ?(tokeniser = String.split_on_char ' ')
-    (uid : doc -> string) =
+    (index : doc mono_index) (uid : doc -> string) =
+  { documents = []; indexes = []; uid; index; strategy; santiser; tokeniser }
+
+let create (type doc) ?santiser ?strategy ?tokeniser (uid : doc -> string) =
   let module T = struct
     include Tfidf (struct
       type t = doc
     end)
   end in
-  {
-    documents = [];
-    indexes = [];
-    uid;
-    index =
-      Indexer
-        ( (module T : Mono_indexer with type doc = doc and type t = T.t),
-          T.empty uid );
-    strategy;
-    santiser;
-    tokeniser;
-  }
+  create_mono ?santiser ?strategy ?tokeniser
+    (Indexer
+       ( (module T : Mono_indexer with type doc = doc and type t = T.t),
+         T.empty uid ))
+    uid
 
 let add_document (type doc) (t : doc t) doc =
   t.documents <- doc :: t.documents;

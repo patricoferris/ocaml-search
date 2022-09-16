@@ -42,13 +42,20 @@ module type S = sig
   val add_index : 'doc t -> ('doc -> string) -> unit
   val add_document : 'doc t -> 'doc -> unit
 
+  val create_mono :
+    ?santiser:(string -> string) ->
+    ?strategy:(string -> string list) ->
+    ?tokeniser:(string -> string list) ->
+    'doc mono_index ->
+    ('doc -> string) ->
+    'doc t
+
   val create :
     ?santiser:(string -> string) ->
     ?strategy:(string -> string list) ->
     ?tokeniser:(string -> string list) ->
     ('doc -> string) ->
     'doc t
-  (** [create uid] is a new search index using [uid] to uniquely identify documents.*)
 end
 
 module type Sigs = sig

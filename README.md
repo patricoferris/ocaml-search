@@ -1,7 +1,7 @@
 ocaml-search
 ------------
 
-A very simple, in-memory search library for OCaml heavily inspired by [js-search](https://github.com/bvaughn/js-search).
+A very simple, search library for OCaml heavily inspired by [js-search](https://github.com/bvaughn/js-search).
 
 ## Usage
 
@@ -78,7 +78,7 @@ At which point you are ready to search!
  {uid = "1"; name = "Alan"; nick = "Al"; age = 12}]
 ```
 
-Note that this implementation uses TFIDF, if we were to also add the `nick` as an index, then `"Alan"` will come to the top. But note, you adding a new index after already documents causes the documents to be re-indexed!
+Note that this implementation uses TFIDF, if we were to also add the `nick` as an index, then `"Alan"` will come to the top. Adding a new index after already adding documents causes the documents to be re-indexed!
 
 ```ocaml
 # Search.add_index search (fun t -> t.nick);
