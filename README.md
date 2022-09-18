@@ -5,7 +5,6 @@ A very simple, search library for OCaml heavily inspired by [js-search](https://
 
 <!-- TOC -->
 
-    - [ocaml-search](#ocaml-search)
 - [Usage](#usage)
     - [Monomorphic Search Indexes](#monomorphic-search-indexes)
         - [Unique Identifiers](#unique-identifiers)
