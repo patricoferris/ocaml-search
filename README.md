@@ -1,11 +1,8 @@
 # ocaml-search
 --------------
 
-A very simple, search library for OCaml heavily inspired by [js-search](https://github.com/bvaughn/js-search).
+A very simple, search library for OCaml heavily inspired by [js-search](https://github.com/bvaughn/js-search), [Craigfe's posts](https://www.craigfe.io/posts/) and [Hmap](https://erratique.ch/repos/hmap)
 
-<!-- TOC -->
-
-- [ocaml-search](#ocaml-search)
 - [Usage](#usage)
     - [Monomorphic Search Indexes](#monomorphic-search-indexes)
         - [Unique Identifiers](#unique-identifiers)
@@ -16,8 +13,6 @@ A very simple, search library for OCaml heavily inspired by [js-search](https://
         - [Adding Indexes](#adding-indexes)
         - [Adding Documents](#adding-documents)
         - [Searching](#searching)
-
-<!-- /TOC -->
 
 # Usage
 
@@ -41,7 +36,7 @@ module type Uid =
   sig type t val compare : t -> t -> int val to_string : t -> string end
 ```
 
-The module only need to provide a type `t` and a `compare` and `to_string` function. `Search.Uids` contains some common modules for your convenience.
+The module only needs to provide a type `t` and a `compare` and `to_string` function. `Search.Uids` contains some common modules for your convenience.
 
 ### Documents
 
@@ -83,9 +78,16 @@ module M = Search.Tfidf.M (Search.Uids.String) (Doc)
 Search indexes come with the `empty` function which creates a new index.
 
 ```ocaml
+# M.empty;;
+- : ?santiser:(string -> string) ->
+    ?strategy:(string -> string list) ->
+    ?tokeniser:(string -> string list) -> unit -> M.t
+= <fun>
 # let search = M.empty () ;;
 val search : M.t = <abstr>
 ```
+
+There are three optional functions you can add to change the how documents are treated. The `tokeniser` splits a string into tokens. By default this is just by whitespace. The `sanitiser` creates a uniform representation of strings, by default `String.lowercase_ascii`. Finally, `stratgey` is the indexing strategy. By default this is a prefixing strategy such that `abc` is indexed with `a`, `ab` and `abc`.
 
 From here you add the indexes. These are the functions from your document to a string that will be used to search for documents matching some string later.
 
@@ -110,7 +112,7 @@ At which point you are ready to search!
  {Doc.uid = "1"; name = "Alan"; nick = "Al"; age = 12}]
 ```
 
-Note that this implementation uses TFIDF, if we were to also add the `nick` as an index, then `"Alan"` will come to the top. Adding a new index after already adding documents causes the documents to be re-indexed!
+Note that this implementation uses [TFIDF](https://en.wikipedia.org/wiki/Tf%E2%80%93idf), if we were to also add the `nick` as an index, then `"Alan"` will come to the top. Adding a new index after already adding documents causes the documents to be re-indexed!
 
 ```ocaml
 # M.add_index search (fun t -> t.nick);
@@ -125,27 +127,25 @@ Heterogeneous search indexes allow you to store more than one type in the index.
 
 ### Type Witness
 
-The mean difference when programming with heterogeneous indexes is that you must provide a type witness when adding indexes and adding documents. A type witness is essentially a value that can be used to check the type of another value at runtime.
+The main difference when programming with heterogeneous indexes is that you must provide a type witness when adding indexes and adding documents. A type witness is essentially a value that can be used to check the type of another value at runtime.
 
 Search provides a low-level type witness module.
 
 ```ocaml
 # module W = Search.Private.Witness;;
 module W = Search.Private.Witness
-# let int_witness1 : int W.t = W.make ();;
-val int_witness1 : int W.t = <module>
-# let int_witness2 : int W.t = W.make ();;
-val int_witness2 : int W.t = <module>
+# let int_witness : int W.t = W.make ();;
+val int_witness : int W.t = <module>
 # let float_witness : int W.t = W.make ();;
 val float_witness : int W.t = <module>
 ```
 
-Here we've constructed a two witnesses for integers and one for floats.
+Here we've constructed two witnesses, one for integers and one for floats.
 
 ```ocaml
-# W.eq int_witness1 int_witness1;;
+# W.eq int_witness int_witness;;
 - : (int, int) W.teq option = Some W.Teq
-# W.eq int_witness1 float_witness;;
+# W.eq int_witness float_witness;;
 - : (int, int) W.teq option = None
 ```
 
