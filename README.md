@@ -136,8 +136,8 @@ Search provides a low-level type witness module.
 module W = Search.Private.Witness
 # let int_witness : int W.t = W.make ();;
 val int_witness : int W.t = <module>
-# let float_witness : int W.t = W.make ();;
-val float_witness : int W.t = <module>
+# let float_witness : float W.t = W.make ();;
+val float_witness : float W.t = <module>
 ```
 
 Here we've constructed two witnesses, one for integers and one for floats.
@@ -146,7 +146,7 @@ Here we've constructed two witnesses, one for integers and one for floats.
 # W.eq int_witness int_witness;;
 - : (int, int) W.teq option = Some W.Teq
 # W.eq int_witness float_witness;;
-- : (int, int) W.teq option = None
+- : (int, float) W.teq option = None
 ```
 
 ### Generic Interface
