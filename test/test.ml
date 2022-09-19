@@ -43,8 +43,8 @@ module Dog = struct
 end
 
 let with_generic () =
-  let document : Doc.t Generic.uid = Generic.Uid_key.create () in
-  let dog : Dog.t Generic.uid = Generic.Uid_key.create () in
+  let document : Doc.t Generic.uid = Generic.Uid.create () in
+  let dog : Dog.t Generic.uid = Generic.Uid.create () in
   let search = Generic.empty () in
   Generic.add_index search document (fun t -> t.Doc.name);
   Generic.add_index search document (fun t -> t.Doc.nick);

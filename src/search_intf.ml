@@ -62,20 +62,20 @@ module type Generic = sig
     type 'a t = (module Tid with type t = 'a)
   end
 
-  module Uid_key : sig
-    type 'v uid_key
+  module Uid : sig
+    type 'v witness
 
-    val create : unit -> 'v uid_key
-    val tid : 'v uid_key -> 'v Witness.t
+    val create : unit -> 'v witness
+    val tid : 'v witness -> 'v Witness.t
 
     type t
 
-    val hide_type : 'v uid_key -> t
+    val hide_type : 'v witness -> t
     val equal : t -> t -> bool
     val compare : t -> t -> int
   end
 
-  type 'v uid = 'v Uid_key.uid_key
+  type 'v uid = 'v Uid.witness
   type binding = KV : ('v uid * 'v) -> binding
   type doc = binding
 
@@ -116,6 +116,10 @@ type 'key generic_index =
       -> 'key generic_index
 
 module type S = sig
+  module Private : sig
+    module Witness = Witness
+  end
+
   module Tfidf : sig
     module M
         (Uid : Uid) (Doc : sig
@@ -129,45 +133,6 @@ module type S = sig
     to_string:('uid -> string) ->
     cmp:('uid -> 'uid -> int) ->
     (module Uid with type t = 'uid)
-
-  (* module Mono : sig
-       type ('uid, 'doc) t
-       (** A search index for documents of type ['doc]. *)
-
-       val search : ('uid, 'doc) t -> string -> 'doc list
-       val add_index : ('uid, 'doc) t -> ('doc -> string) -> unit
-       val add_document : ('uid, 'doc) t -> 'uid -> 'doc -> unit
-
-       val create :
-         ?santiser:(string -> string) ->
-         ?strategy:(string -> string list) ->
-         ?tokeniser:(string -> string list) ->
-         ('uid, 'doc) mono_index ->
-         ('doc -> 'uid) ->
-         ('uid, 'doc) t
-
-       val create_mono :
-         ?santiser:(string -> string) ->
-         ?strategy:(string -> string list) ->
-         ?tokeniser:(string -> string list) ->
-         ('doc -> 'uid) ->
-         (module Uid with type t = 'uid) ->
-         ('uid, 'doc) t
-     end
-
-     module Generic (Uid : Uid) : sig
-       type 'key t
-       (** A generic search index *)
-
-       val create :
-         ?santiser:(string -> string) ->
-         ?strategy:(string -> string list) ->
-         ?tokeniser:(string -> string list) ->
-         (module Uid with type t = 'key) ->
-         'key t
-
-       val add_index : 'key t -> ('doc -> string) -> unit
-     end *)
 
   module Uids : sig
     module String : Uid with type t = string

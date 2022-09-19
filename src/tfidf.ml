@@ -174,12 +174,12 @@ end
 (* Type identifiers.
    See http://alan.petitepomme.net/cwn/2015.03.24.html#1 and
    https://erratique.ch/repos/hmap/tree/src/hmap.ml *)
-module G (Uid : Search_intf.Uid) = struct
+module G (U : Search_intf.Uid) = struct
   module TokenMap = Map.Make (String)
   module Witness = Witness
 
-  module Uid_key = struct
-    type 'a uid_key = { uid : Uid.t option; tid : 'a Witness.t }
+  module Uid = struct
+    type 'a witness = { uid : U.t option; tid : 'a Witness.t }
 
     let tid v = v.tid
 
@@ -187,25 +187,25 @@ module G (Uid : Search_intf.Uid) = struct
       let tid = Witness.make () in
       { uid = None; tid }
 
-    type t = V : 'a uid_key -> t
+    type t = V : 'a witness -> t
 
     let hide_type k = V k
 
     let equal (V k0) (V k1) =
-      Uid.compare (Option.get k0.uid) (Option.get k1.uid) = 0
+      U.compare (Option.get k0.uid) (Option.get k1.uid) = 0
 
     let compare (V k0) (V k1) =
-      Uid.compare (Option.get k0.uid) (Option.get k1.uid)
+      U.compare (Option.get k0.uid) (Option.get k1.uid)
 
-    let to_string (V k) = Uid.to_string (Option.get k.uid)
+    let to_string (V k) = U.to_string (Option.get k.uid)
   end
 
-  type 'v uid = 'v Uid_key.uid_key
+  type 'v uid = 'v Uid.witness
   type binding = KV : ('v uid * 'v) -> binding
   type doc = binding
-  type key = Uid.t
+  type key = U.t
 
-  module UidMap = Map.Make (Uid_key)
+  module UidMap = Map.Make (Uid)
 
   type t = {
     mutable indexes : (binding -> string option) list;
@@ -223,8 +223,7 @@ module G (Uid : Search_intf.Uid) = struct
     mutable uid_map : (binding * int) UidMap.t;
   }
 
-  let pp_uid ppf (s, (_, i)) =
-    Format.fprintf ppf "%s: %i" (Uid_key.to_string s) i
+  let pp_uid ppf (s, (_, i)) = Format.fprintf ppf "%s: %i" (Uid.to_string s) i
 
   let pp_stats ppf stats =
     let uids = UidMap.bindings stats.uid_map in
@@ -266,7 +265,7 @@ module G (Uid : Search_intf.Uid) = struct
             uid_map = UidMap.empty;
           }
     in
-    let key = Uid_key.V uid in
+    let key = Uid.V uid in
     let token_data, uid_map =
       match UidMap.find_opt key token_data.uid_map with
       | Some (doc, occurences) ->
@@ -285,7 +284,7 @@ module G (Uid : Search_intf.Uid) = struct
 
   let add_document t (type v) (uid : v uid) key (doc : v) =
     let uid = { uid with uid = Some key } in
-    let uid_key = Uid_key.V uid in
+    let uid_key = Uid.V uid in
     let binding = KV (uid, doc) in
     t.documents <- UidMap.add uid_key binding t.documents;
     let fields = List.fold_left (fun acc i -> i binding :: acc) [] t.indexes in
@@ -299,12 +298,12 @@ module G (Uid : Search_intf.Uid) = struct
       fields
 
   let apply (type v) (k : v uid) ~default (f : v -> 'a) =
-    let k = k.Uid_key.tid in
+    let k = k.Uid.tid in
     fun (KV (k', v)) ->
       match Witness.eq k k'.tid with Some Teq -> f v | _ -> default
 
   let apply_exn (type v) (k : v uid) (f : v -> 'a) =
-    let k = k.Uid_key.tid in
+    let k = k.Uid.tid in
     fun (KV (k', v)) ->
       match Witness.eq k k'.tid with
       | Some Teq -> f v
@@ -346,7 +345,7 @@ module G (Uid : Search_intf.Uid) = struct
         | None -> 0.
         | Some stats -> (
             doc |> fun (KV (uid, _doc)) ->
-            match UidMap.find_opt (Uid_key.V uid) stats.uid_map with
+            match UidMap.find_opt (Uid.V uid) stats.uid_map with
             | None -> 0.
             | Some (_, v) -> float_of_int v)
       in

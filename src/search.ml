@@ -1,6 +1,10 @@
 include Search_intf
 module Tfidf = Tfidf
 
+module Private = struct
+  module Witness = Witness
+end
+
 let create_uid (type uid) ~(to_string : uid -> string)
     ~(cmp : uid -> uid -> int) =
   let module T = struct
