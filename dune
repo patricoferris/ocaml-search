@@ -1,4 +1,4 @@
 (mdx
  (files README.md)
- (packages search)
+ (libraries search)
  (preludes test/prelude.txt))

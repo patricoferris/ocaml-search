@@ -100,8 +100,11 @@ struct
     List.iter
       (fun field ->
         List.iter
-          (fun token -> index t ~uid ~token doc)
-          (t.strategy (t.santiser field)))
+          (fun token ->
+            List.iter
+              (fun expanded_token -> index t ~uid ~token:expanded_token doc)
+              (t.strategy token))
+          (t.tokeniser (t.santiser field)))
       fields
 
   let add_index t index =

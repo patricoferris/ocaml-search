@@ -1,3 +1,7 @@
 (test
  (name test)
  (libraries search))
+
+(mdx
+ (files tfidf.md)
+ (libraries search))

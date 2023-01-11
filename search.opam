@@ -12,7 +12,7 @@ build: [
 ]
 depends: [
   "ocaml"   {>= "4.08"}
-  "dune"    {>= "2.9.0"}
+  "dune"    {>= "3.0.0"}
   "mdx"     {with-test}
 ]
 synopsis: "Simple, in-memory search library in pure OCaml"
