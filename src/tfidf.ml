@@ -1,3 +1,5 @@
+open! Import
+
 let prefix_stratgey s =
   let res = ref [] in
   for i = 1 to String.length s do
