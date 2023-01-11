@@ -1,7 +1,7 @@
 # ocaml-search
 --------------
 
-A very simple, search library for OCaml heavily inspired by [js-search](https://github.com/bvaughn/js-search), [Craigfe's posts](https://www.craigfe.io/posts/) and [Hmap](https://erratique.ch/repos/hmap)
+A very simple, search library for OCaml heavily inspired by [js-search](https://github.com/bvaughn/js-search), originally by [Craigfe's posts](https://www.craigfe.io/posts/) and [Hmap](https://erratique.ch/repos/hmap).
 
 - [Usage](#usage)
     - [Monomorphic Search Indexes](#monomorphic-search-indexes)
@@ -72,7 +72,7 @@ let docs = [
 ]
 end
 
-module M = Search.Tfidf.M (Search.Uids.String) (Doc)
+module M = Search.Tfidf.Mono (Search.Uids.String) (Doc)
 ```
 
 Search indexes come with the `empty` function which creates a new index.
@@ -154,7 +154,7 @@ Here we've constructed two witnesses, one for integers and one for floats.
 The interface is very similar to that of the monomorphic search index. With the `Tfidf` implementation, we only need to provide a unique identifier for documents. The type witness will take care of differentiating the different kinds of documents.
 
 ```ocaml
-module G = Search.Tfidf.G (Search.Uids.String)
+module G = Search.Tfidf.Generic (Search.Uids.String)
 module Cat = struct
   type t = { name : string; lives : int }
 end
@@ -240,12 +240,11 @@ val docs : G.doc list = [G.KV (<abstr>, <poly>); G.KV (<abstr>, <poly>)]
 We'll use `G.apply` to get the names of the animals.
 
 ```ocaml
-# List.filter_map 
-    (fun t -> 
-       G.apply 
-       cat 
+# List.filter_map
+    (fun t ->
+       G.apply
+       cat
        ~default:(G.apply dog ~default:None (fun d -> Some (d.Dog.name ^ " (the dog)")) t)
        (fun c -> Some (c.Cat.name ^ " (the cat)")) t) docs;;
 - : string list = ["Alan (the dog)"; "Alice (the cat)"]
 ```
-

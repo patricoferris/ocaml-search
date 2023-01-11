@@ -1,0 +1,9 @@
+<><><> Name only <><><>
+uid: 0, name: Alice, nick: , age: 10
+uid: 1, name: Alan, nick: Al, age: 12
+<><><> Name and nick <><><>
+uid: 1, name: Alan, nick: Al, age: 12
+uid: 0, name: Alice, nick: , age: 10
+<><><> Name only (search: "Ki") <><><>
+Kiki (the dog)
+Kisa (the cat)
