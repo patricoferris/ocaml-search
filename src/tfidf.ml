@@ -1,13 +1,9 @@
 let prefix_stratgey s =
-  let chars = String.to_seq s in
-  let s =
-    Seq.fold_left
-      (fun (prev, acc) c ->
-        let c = prev ^ String.make 1 c in
-        (c, c :: acc))
-      ("", []) chars
-  in
-  snd s |> List.rev
+  let res = ref [] in
+  for i = 1 to String.length s do
+    res := String.sub s 0 i :: !res
+  done;
+  List.rev !res
 
 module Mono
     (Uid : Search_intf.Uid) (Doc : sig
