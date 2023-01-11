@@ -9,7 +9,7 @@ let prefix_stratgey s =
   in
   snd s |> List.rev
 
-module M
+module Mono
     (Uid : Search_intf.Uid) (Doc : sig
       type t
     end) =
@@ -112,6 +112,12 @@ struct
     t.documents <- [];
     List.iter (fun (k, v) -> add_document t k v) docs
 
+  let add_indexes t indexes =
+    t.indexes <- indexes @ t.indexes;
+    let docs = t.documents in
+    t.documents <- [];
+    List.iter (fun (k, v) -> add_document t k v) docs
+
   let idf t token docs =
     match TokenMap.find_opt token t.cache with
     | Some i -> i
@@ -174,7 +180,7 @@ end
 (* Type identifiers.
    See http://alan.petitepomme.net/cwn/2015.03.24.html#1 and
    https://erratique.ch/repos/hmap/tree/src/hmap.ml *)
-module G (U : Search_intf.Uid) = struct
+module Generic (U : Search_intf.Uid) = struct
   module TokenMap = Map.Make (String)
   module Witness = Witness
 
@@ -280,8 +286,6 @@ module G (U : Search_intf.Uid) = struct
     token_data.uid_map <- uid_map;
     t.token_map <- TokenMap.add token token_data t.token_map
 
-  (* let apply (type v) (i : binding -> string) (doc : v) = *)
-
   let add_document t (type v) (uid : v uid) key (doc : v) =
     let uid = { uid with uid = Some key } in
     let uid_key = Uid.V uid in
@@ -311,6 +315,19 @@ module G (U : Search_intf.Uid) = struct
 
   let add_index t k index =
     t.indexes <- apply ~default:None k (fun v -> Some (index v)) :: t.indexes;
+    let docs = t.documents in
+    t.documents <- UidMap.empty;
+    UidMap.iter
+      (fun _ (KV (k, v)) -> add_document t k (Option.get k.uid) v)
+      docs
+
+  let add_indexes t k indexes =
+    let indexes =
+      List.map
+        (fun index -> apply ~default:None k (fun v -> Some (index v)))
+        indexes
+    in
+    t.indexes <- indexes @ t.indexes;
     let docs = t.documents in
     t.documents <- UidMap.empty;
     UidMap.iter

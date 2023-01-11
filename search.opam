@@ -1,7 +1,7 @@
 opam-version: "2.0"
 maintainer:   "patrick@sirref.org"
 authors:      ["Patrick Ferris"]
-license:      "ISC"
+license:      "MIT"
 homepage:     "https://github.com/patricoferris/ocaml-search"
 bug-reports:  "https://github.com/patricoferris/ocaml-search/issues"
 dev-repo:     "git+https://github.com/patricoferris/ocaml-search.git"
@@ -15,3 +15,8 @@ depends: [
   "mdx"     {with-test}
 ]
 synopsis: "Simple, in-memory search library in pure OCaml"
+description:"""
+An in-memory search library in Pure OCaml providing both search indexes for
+documents of the type and heterogenerous search indexes. A term-frequency inverse
+document-frequency implementation is provided by the library.
+"""

@@ -12,8 +12,8 @@ module Doc = struct
     ]
 end
 
-module Mono = Search.Tfidf.M (Search.Uids.String) (Doc)
-module Generic = Search.Tfidf.G (Search.Uids.String)
+module Mono = Search.Tfidf.Mono (Search.Uids.String) (Doc)
+module Generic = Search.Tfidf.Generic (Search.Uids.String)
 
 let only_name () =
   let search = Mono.empty () in
@@ -24,8 +24,7 @@ let only_name () =
 
 let with_nick () =
   let search = Mono.empty () in
-  Mono.add_index search (fun t -> t.name);
-  Mono.add_index search (fun t -> t.nick);
+  Mono.add_indexes search [ (fun t -> t.name); (fun t -> t.nick) ];
   List.iter (fun doc -> Mono.add_document search doc.Doc.uid doc) Doc.docs;
   let docs = Mono.search search "Al" in
   Format.(pp_print_list Doc.pp) Format.std_formatter docs
@@ -39,28 +38,33 @@ let () =
 module Dog = struct
   type t = { name : string }
 
-  let dogs = [ { name = "Fido" }; { name = "Alan (the dog)" } ]
+  let dogs = [ { name = "Fido (the dog)" }; { name = "Kiki (the dog)" } ]
+end
+
+module Cat = struct
+  type t = { name : string; lives : int }
+
+  let cats = [ { name = "Kisa (the cat)"; lives = Int.max_int } ]
 end
 
 let with_generic () =
-  let document : Doc.t Generic.uid = Generic.Uid.create () in
+  let cat : Cat.t Generic.uid = Generic.Uid.create () in
   let dog : Dog.t Generic.uid = Generic.Uid.create () in
   let search = Generic.empty () in
-  Generic.add_index search document (fun t -> t.Doc.name);
-  Generic.add_index search document (fun t -> t.Doc.nick);
+  Generic.add_index search cat (fun t -> t.Cat.name);
   Generic.add_index search dog (fun t -> t.Dog.name);
-  List.iter (fun d -> Generic.add_document search document d.Doc.uid d) Doc.docs;
+  List.iter (fun d -> Generic.add_document search cat d.Cat.name d) Cat.cats;
   List.iter (fun d -> Generic.add_document search dog d.Dog.name d) Dog.dogs;
-  let docs = Generic.search search "Al" in
+  let docs = Generic.search search "Ki" in
   List.filter_map
     (fun v ->
-      Generic.apply document
+      Generic.apply cat
         ~default:(Generic.apply dog ~default:None (fun t -> Some t.Dog.name) v)
-        (fun v -> Some v.Doc.name)
+        (fun v -> Some v.Cat.name)
         v)
     docs
   |> List.iter print_endline
 
 let () =
-  Format.printf "\n<><><> Name only <><><>\n";
+  Format.printf "\n<><><> Name only (search: \"Ki\") <><><>\n";
   with_generic ()
